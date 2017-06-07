@@ -1,0 +1,135 @@
+server:
+  port: 13425
+spring:
+  profiles: development
+  datasource:
+    url: jdbc:oracle:thin:@193.0.10.53:1521:sjos
+    username: sjhub
+    password: sjhubdb
+    driverClassName: oracle.jdbc.OracleDriver
+    maximum-pool-size: 200
+    max-active: 150
+    min-idle: 10
+    max-idle: 10
+    initial-size: 15
+    max-wait: 40
+    test-on-borrow: true
+    validation-query: SELECT 1 FROM DUAL
+
+  # 设置redis服务
+  redis:
+    database: 13
+    host: srv3.sanjiang.info
+    #host: localhost
+    pool:
+      max-active: 8
+      min-idle: 2
+      max-wait: -1
+      max-idle: 10
+  #jpa:
+   # show-sql: true
+#  jpa:
+#    hibernate:
+#      show_sql: true
+#    properties:
+#      hibernate:
+#        show_sql: true
+#        format_sql: false
+#        use_sql_comments: false
+baidu:
+  #私钥
+  secret: 95d0d21b817de043
+  #api版本号
+  version: 2
+  #三江对应的百度外卖账户
+  source: 30265
+  #请求url
+  apiUrl: http://api.waimai.baidu.com
+  batchStockNum: 100
+  batchPriceNum: 100
+  syncOrderStaus: 7,8,9,10
+  autoConfirmStartTime: "19:00"
+  autoConfirmEndTime: "08:30"
+  request:
+    orderCreate: order.create
+    orderCancel: order.cancel
+    orderDetail: order.get
+    orderConfirm: order.confirm
+    orderStatus: order.status.get
+    batchStock: sku.stock.update.batch.byu
+    batchPrice: sku.price.update.batch.byu
+    pusthOrderStatus: order.status.push
+    orderList: order.list
+#中间库
+sjjk:
+  datasource:
+    driverClassName: oracle.jdbc.OracleDriver
+    url: jdbc:oracle:thin:@193.0.0.5:1521:sjjk
+    username: sj
+    password: sjjk
+    poolSize: 100
+    max-active: 50
+    min-idle: 10
+    max-idle: 10
+    initial-size: 15
+    max-wait: 40
+    test-on-borrow: true
+    validation-query: SELECT 1 FROM DUAL
+
+
+#中间库
+dwh:
+  datasource:
+    driverClassName: oracle.jdbc.OracleDriver
+    url: jdbc:oracle:thin:@193.0.10.45:1521:sjom
+    username: dwh
+    password: sjos
+    poolSize: 100
+    max-active: 50
+    min-idle: 10
+    max-idle: 10
+    initial-size: 15
+    max-wait: 40
+    test-on-borrow: true
+    validation-query: SELECT 1 FROM DUAL
+
+#京东到家库
+jddj:
+  v: 1.0
+  token: 0b70ccf3-da28-4a5b-b51e-f25682e1c859
+  app_key: 77ddf5103bb64dacaac776466bd4714e
+  app_secret: 60c70f6025464568be5f32be3aec50e4
+  format : json
+  apiUrl: https://openo2o.jd.com/djapi
+  batchStockNum: 500
+  batchPriceNum: 500
+  centerUrl: http://193.0.10.121:20001
+  datasource:
+    driverClassName: oracle.jdbc.OracleDriver
+    url: jdbc:oracle:thin:@193.0.10.53:1521:sjos
+    username: jddj
+    password: jddj
+    poolSize: 100
+    max-active: 50
+    min-idle: 10
+    max-idle: 10
+    initial-size: 15
+    max-wait: 40
+    test-on-borrow: true
+    validation-query: SELECT 1 FROM DUAL
+
+platform:
+  bdwm: 10001
+  jddj: 10002
+
+hystrix:
+  command:
+    default:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 10000
+sjes:
+  url:
+    api:
+      item: http://srv5.sanjiang.info:20010
