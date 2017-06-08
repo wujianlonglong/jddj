@@ -83,9 +83,6 @@ public class PriceOpt extends BaseStockBusiness {
 
             platformShopList.forEach(obj -> {
                 String sjShop = obj.getSjShopCode();
-                if(!sjShop.equals("00008")){
-                    return;
-                }
                 log.info("门店：" + sjShop + "全量同步价格开始！");
                 try {
                     //获得指定商场所有商品价格信息
