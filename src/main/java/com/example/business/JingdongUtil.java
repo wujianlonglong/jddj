@@ -182,4 +182,36 @@ public class JingdongUtil {
         return result;
     }
 
+
+    public JDSingleStockUpdateResponseObj UpdateCurrentQty(String jdShop,String jdgood,int validStock){
+        JDSingleStockUpdateRequestPara obj = new JDSingleStockUpdateRequestPara();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String currentTime = dateFormat.format(new Date());
+
+        obj.getJd_param_json().setStationNo(jdShop);
+        obj.getJd_param_json().setSkuId(jdgood);
+        obj.getJd_param_json().setCurrentQty(String.valueOf(validStock));
+
+        String sign= common.GetRequestSign(JsonUtil.objectToString(obj.getJd_param_json()), currentTime, "1.0");
+        obj.setSign(sign);
+        String postData = "v=" + obj.getV()
+                + "&format=" + obj.getFormat()
+                + "&app_key=" + obj.getApp_key()
+                + "&app_secret=" + obj.getApp_secret()
+                + "&token=" + obj.getToken()
+                + "&jd_param_json=" +  JsonUtil.objectToString(obj.getJd_param_json())
+                + "&sign=" + obj.getSign()
+                + "&timestamp=" +  currentTime;
+
+        HttpHeaders headers=new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        HttpEntity<String> entity=new HttpEntity<String>(postData,headers);
+        String Response = restTemplate.postForObject(jddjProperty.getApiUrl() + "/update/currentQty",entity,String.class);
+        Response = common.getClearJsonString(Response);
+
+        JDSingleStockUpdateResponseObj result=JsonUtil.jsonToObject(Response,JDSingleStockUpdateResponseObj.class);
+        return result;
+
+    }
+
 }

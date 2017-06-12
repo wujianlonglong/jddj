@@ -65,7 +65,7 @@ public class PriceOpt extends BaseStockBusiness {
     /**
      * 全量同步价格（导入的商品不同步价格）
      */
-    @Scheduled(cron = "0 0 1 * * *")
+    @Scheduled(cron = "0 30 1 * * *")
     public void allPriceSync() {
         String syncTime = simpleDateFormat.format(new Date());
         log.info(syncTime + "---------------全量同步门店商品价格---开始!");
@@ -190,7 +190,7 @@ public class PriceOpt extends BaseStockBusiness {
     /**
      * 增量同步价格（导入的商品不同步价格）
      */
-    @Scheduled(cron = "0 30 7-18 * * *")
+    @Scheduled(cron = "0 0 7-18 * * *")
     public void incrementalPriceSync() {
         LocalDateTime now = LocalDateTime.now();
         String start = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));

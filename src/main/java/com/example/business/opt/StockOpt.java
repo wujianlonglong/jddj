@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -58,6 +59,10 @@ public class StockOpt extends BaseStockBusiness {
     StockSyncRepository stockSyncRepository;
 
     @Autowired
+    protected StockVirtualPlanRepository planRepository;
+
+
+    @Autowired
     JddjProperty jddjProperty;
 
     @Autowired
@@ -79,7 +84,7 @@ public class StockOpt extends BaseStockBusiness {
     /**
      * 虚拟商品库存同步(虚拟商品全量同步)
      */
-    //@Scheduled(cron = "0 */5 7-23 * * *")
+    @Scheduled(cron = "0 */5 7-23 * * *")
     public void virtualStockSync() {
 
         String now = simpleDateFormat.format(new Date());
@@ -173,6 +178,7 @@ public class StockOpt extends BaseStockBusiness {
                         int tbyzNum = stockSync.getTbdjPreholdNum();//淘宝到家预占库存
                         int sjyzNum = stockSync.getSjdsPreholdNum();//三江网购预占库存
                         int validStock = stockNum - lockNum - bdyzNum - tbyzNum - sjyzNum;//有效库存：减去其他平台的预占库存
+                        validStock = validStock <= 0 ? 0 : validStock;
 
                         JDGoodsStockItemObj goodsItem = new JDGoodsStockItemObj();
                         goodsItem.setCurrentQty(validStock);
@@ -206,7 +212,7 @@ public class StockOpt extends BaseStockBusiness {
     /**
      * 门店实际库存--全量同步（虚拟库存另外同步）
      */
-    //@Scheduled(cron = "0 30 2 * * *")
+    @Scheduled(cron = "0 50 2 * * *")
     public void allStockSync() {
         String syncTime = simpleDateFormat.format(new Date());
         log.info(syncTime + "---------------全量同步门店实际库存---开始!");
@@ -266,7 +272,7 @@ public class StockOpt extends BaseStockBusiness {
                     String platShopCode = obj.getPlatformShopCode();//京东到家门店编号
                     //以中间库为核心，循环同步库存
                     storeList.forEach(store -> {
-                       // InsertGoodList(platProdMap, goodsItemList, updateList, sjShop, stockSyncMap, platShopCode, store);
+                        // InsertGoodList(platProdMap, goodsItemList, updateList, sjShop, stockSyncMap, platShopCode, store);
                         String sjGoodsCode = store.getSjGoodsCode();//三江商品编号
                         try {
                             String platGoodsCode = platProdMap.get(sjGoodsCode);//京东商品编号
@@ -286,6 +292,7 @@ public class StockOpt extends BaseStockBusiness {
                             int tbyzNum = stockSync.getTbdjPreholdNum();//淘宝到家预占库存
                             int sjyzNum = stockSync.getSjdsPreholdNum();//三江网购预占库存
                             int validStock = stockNum - lockNum - bdyzNum - tbyzNum - sjyzNum;//有效库存：减去其他平台的预占库存
+                            validStock = validStock <= 0 ? 0 : validStock;
 
                             JDGoodsStockItemObj goodsItem = new JDGoodsStockItemObj();
                             goodsItem.setCurrentQty(validStock);
@@ -328,7 +335,7 @@ public class StockOpt extends BaseStockBusiness {
     /**
      * 门店实际库存--增量同步
      */
-    //@Scheduled(cron = "0 */5 7-23 * * *")
+    @Scheduled(cron = "0 */5 7-23 * * *")
     public void increStockSync() {
         LocalDateTime now = LocalDateTime.now();
         String start = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
@@ -380,7 +387,8 @@ public class StockOpt extends BaseStockBusiness {
             List<JDGoodsStockItemObj> goodsItemList = new ArrayList<>();//同步至京东到家的商品List
             List<JDBatchStockSync> updateList = new ArrayList<>();//更新本地库存同步数据库List
 
-            xtStoreGroupByShop.forEach((shop,xtList)->{
+            xtStoreGroupByShop.forEach((shop, xtList) -> {
+                log.info("门店"+shop+"开始增量库存同步！");
                 //取得指定门店可同步的库存同步信息list
                 List<StockSync> stockSyncList = stockSyncRepository.findByShopCodeAndSyncFlag(shop, 1);
                 if (CollectionUtils.isEmpty(stockSyncList)) {
@@ -400,7 +408,7 @@ public class StockOpt extends BaseStockBusiness {
                 String platShopCode = shopMap.get(shop);//京东到家门店编号
 
                 xtList.forEach(store -> {
-                   // InsertGoodList(platProdMap, goodsItemList, updateList, shop, stockSyncMap, platShopCode, store);
+                    // InsertGoodList(platProdMap, goodsItemList, updateList, shop, stockSyncMap, platShopCode, store);
                     String sjGoodsCode = store.getSjGoodsCode();//三江商品编号
                     try {
                         String platGoodsCode = platProdMap.get(sjGoodsCode);//京东商品编号
@@ -420,6 +428,7 @@ public class StockOpt extends BaseStockBusiness {
                         int tbyzNum = stockSync.getTbdjPreholdNum();//淘宝到家预占库存
                         int sjyzNum = stockSync.getSjdsPreholdNum();//三江网购预占库存
                         int validStock = stockNum - lockNum - bdyzNum - tbyzNum - sjyzNum;//有效库存：减去其他平台的预占库存
+                        validStock = validStock <= 0 ? 0 : validStock;
 
                         JDGoodsStockItemObj goodsItem = new JDGoodsStockItemObj();
                         goodsItem.setCurrentQty(validStock);
@@ -489,6 +498,141 @@ public class StockOpt extends BaseStockBusiness {
         } catch (Exception ex) {
             log.error("门店：" + shop + ",商品：" + sjGoodsCode + "全量同步库存错误：" + ex.toString());
             return;
+        }
+    }
+
+    /**
+     * 锁定库存解锁
+     */
+    @Scheduled(cron = "0 0,30 * * * *")
+    public void releaseLockStockNum() {
+        LocalDateTime now = LocalDateTime.now();
+        // String initTime = String.format("%02d", now.getHour()) + ":" + String.format("%02d", now.getMinute());
+        String initTime = "19:30";
+        try {
+            // 取得当前时间的释放锁定库存计划
+            List<StockVirtualPlan> planList = planRepository.findByVirLockSyncTimeAndVirLockStatus(initTime, Constant.SYNC_FLAG_ENABLE);
+            if (CollectionUtils.isEmpty(planList)) {
+                return;
+            }
+
+            log.info("释放锁定库存数据releaseLockStockNum........................start");
+
+            Map<String, List<StockVirtualPlan>> plaMap = planList.stream().collect(Collectors.groupingBy(StockVirtualPlan::getSjShopCode));
+            //获取京东到家商品映射
+            Map<String, String> platProdMap = getPlatProdMap(platformProperty.getJddj(), true);
+
+            List<PlatformShop> platformShopList = shopRepository.findByPlatformIdAndStatus(platformProperty.getJddj(), Constant.SHOP_STATUS_ENABLE);
+            if (CollectionUtils.isEmpty(platformShopList)) {
+                log.error("中台没有京东到家的有效商场！");
+                return;
+            }
+            Map<String, String> shopMap = new HashMap<>(); //获取京东到家商场映射
+            platformShopList.forEach(shop ->
+                    shopMap.put(shop.getSjShopCode(), shop.getPlatformShopCode())
+            );
+
+            //获取有效的虚拟商品列表
+            List<StockVirtualSync> stockVirtualSyncList = stockVirtualSyncRepository.getValidVirStock();
+            Map<String, List<StockVirtualSync>> virMap = stockVirtualSyncList.stream().collect(Collectors.groupingBy(StockVirtualSync::getSjShopCode));
+
+            List<JDGoodsStockItemObj> goodsItemList = new ArrayList<>();//同步至京东到家的商品List
+            List<JDBatchStockSync> updateList = new ArrayList<>();//更新本地库存同步数据库List
+
+            plaMap.forEach((shop, lockList) -> {
+                String jdShop = shopMap.get(shop);
+                if (null == jdShop) {
+                    log.error("门店" + shop + "不是京东到家有效门店！");
+                    return;
+                }
+                Map<String, Integer> virGoodMap = new HashMap<>();
+                List<StockVirtualSync> virList = virMap.get(shop);
+                if (CollectionUtils.isNotEmpty(virList)) {
+                    virList.forEach(v -> virGoodMap.put(v.getSjGoodsCode(), v.getVirtualStockNum()));
+                }
+                //获取可用的中间库存list
+                List<XtStore> storeList = this.getXtStockList(shop);
+                if (CollectionUtils.isEmpty(storeList)) {
+                    log.error("门店：" + shop + "没有可用的中间库存！");
+                    // return;
+                } else {
+                    storeList = storeList.stream().filter(store -> store != null).collect(Collectors.toList());
+                    if (CollectionUtils.isEmpty(storeList)) {
+                        log.error("门店：" + shop + "没有可用的中间库存！");
+                        // return;
+                    }
+                }
+                Map<String, Integer> xtGoodMap = new HashMap<>();
+                if (CollectionUtils.isNotEmpty(storeList)) {
+                    storeList.forEach(store -> xtGoodMap.put(store.getSjGoodsCode(), store.getStockNumber()));
+                }
+
+                Map<String, StockSync> stockSyncMap = new HashMap<>();
+                //取得指定门店所有的库存同步信息list
+                List<StockSync> stockSyncList = stockSyncRepository.findByShopCode(shop);
+                if (CollectionUtils.isNotEmpty(stockSyncList)) {
+                    stockSyncList.forEach(stockSync ->
+                            stockSyncMap.put(stockSync.getSjGoodsCode(), stockSync)
+                    );
+                }
+                lockList.forEach(lock -> {
+                    String sjGood = lock.getSjGoodsCode();
+                    String jdGood = platProdMap.get(sjGood);
+                    if (null == jdGood) {
+                        log.error("商品：" + sjGood + "不是京东到家商品！");
+                        return;
+                    }
+                    Integer stockNum = 0;
+                    if (virGoodMap.containsKey(sjGood)) {
+                        stockNum = virGoodMap.get(sjGood);
+                    } else {
+                        if (xtGoodMap.containsKey(sjGood)) {
+                            stockNum = xtGoodMap.get(sjGood);
+                        } else {
+                            log.error("虚拟库存和中间库不存在有效的商场" + shop + "商品" + sjGood);
+                            return;
+                        }
+                    }
+
+                    StockSync stockSync = stockSyncMap.get(sjGood);
+                    if (null == stockSync) {
+                        log.error("中台同步表中没有门店：" + shop + ",三江商品编号:" + sjGood + "的数据");
+                        return;
+                    }
+                    if (!virGoodMap.containsKey(sjGood) && stockSync.getSyncFlag() == 0) {
+                        log.error("中台同步表中门店：" + shop + ",三江商品编号:" + sjGood + "为不同步状态，并且不为虚拟商品，所以不进行库存同步！");
+                        return;
+                    }
+
+                    int lockNum = 0;//锁定库存当做已清零处理
+                    int bdyzNum = stockSync.getBdwmPreholdNum();//百度外卖预占库存
+                    int tbyzNum = stockSync.getTbdjPreholdNum();//淘宝到家预占库存
+                    int sjyzNum = stockSync.getSjdsPreholdNum();//三江网购预占库存
+                    int validStock = stockNum - lockNum - bdyzNum - tbyzNum - sjyzNum;//有效库存：减去其他平台的预占库存
+                    validStock = validStock <= 0 ? 0 : validStock;
+
+                    JDGoodsStockItemObj goodsItem = new JDGoodsStockItemObj();
+                    goodsItem.setCurrentQty(validStock);
+                    goodsItem.setSkuId(Long.valueOf(jdGood));
+                    goodsItem.setStationNo(jdShop);
+                    goodsItemList.add(goodsItem);
+
+                    JDBatchStockSync update = new JDBatchStockSync();
+                    update.setGoodsid(new BigDecimal(jdGood));
+                    update.setStoreid(shop);
+                    update.setStoreStock(new BigDecimal(String.valueOf(stockNum)));
+                    update.setCurrentStock(new BigDecimal(String.valueOf(validStock)));
+                    updateList.add(update);
+
+                });
+            });
+            batchUpdateStock(goodsItemList, updateList);//批量更新库存
+
+        } catch (Exception ex) {
+            log.error("释放锁定库存失败：" + ex.toString());
+        } finally {
+            String end = simpleDateFormat.format(new Date());
+            log.info(end + "-----释放锁定库存数据releaseLockStockNum---结束！");
         }
     }
 

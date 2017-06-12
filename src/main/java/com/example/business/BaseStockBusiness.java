@@ -8,10 +8,14 @@ import com.example.repository.sjhub.PriceImportRepository;
 import com.example.utils.constant.RedisConstant;
 import com.example.utils.enums.ProductStatusEnum;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -23,6 +27,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
@@ -87,6 +92,10 @@ public class BaseStockBusiness {
      */
     private static final String SHO_PRODUCT_STOCK_SQL = String.format("%s and m.scbh =? ", ALL_PRODUCT_STOCK_SQL);
 
+
+    private static final String SHOP_PRODUCT_STOCK_SQL = String.format("%s and m.scbh=? and m.glbh=?", ALL_PRODUCT_STOCK_SQL);
+
+
     /**
      * 指定了门店列表当天更新的商品库存信息
      */
@@ -117,47 +126,47 @@ public class BaseStockBusiness {
      * @param platformId 平台id
      * @return 平台与三江门店的编码映射
      */
-    protected Map<String, String> getPlatProdMap(String platformId, boolean isForSj) {
-//        String redisKey = isForSj ? RedisConstant.PLAT_PROD_MAP_SJ + platformId : RedisConstant.PLAT_PROD_MAP_PLAT + platformId;
-//        Map<String, String> platProdMap = valueOperations.get(redisKey);
-//        if (MapUtils.isNotEmpty(platProdMap)) {
-//            return platProdMap;
-//        } else {
-//            // 取得所有上架状态商品
-//            List<PlatformProduct> platProdList = platProductRepository.findByPlatformIdAndStatus(platformId,1);
-//
-//            // 三江商品编码与平台商品编码的映射
-//            Map<String, String> tempMap = new HashMap<>();
-//            platProdList.stream()
-//                    .filter(product -> product.getStatus() != ProductStatusEnum.DELETED.status())
-//                    .forEach(product -> {
-//                        if (isForSj) {
-//                            tempMap.put(product.getSjGoodsCode(), product.getPlatformGoodsCode());
-//                        } else {
-//                            tempMap.put(product.getPlatformGoodsCode(), product.getSjGoodsCode());
-//                        }
-//                    });
-//
-//            valueOperations.set(redisKey, tempMap);
-//
-//            return tempMap;
-//        }
+    public Map<String, String> getPlatProdMap(String platformId, boolean isForSj) {
+        String redisKey = isForSj ? RedisConstant.PLAT_PROD_MAP_SJ + platformId : RedisConstant.PLAT_PROD_MAP_PLAT + platformId;
+        Map<String, String> platProdMap = valueOperations.get(redisKey);
+        if (MapUtils.isNotEmpty(platProdMap)) {
+            return platProdMap;
+        } else {
+            // 取得所有上架状态商品
+            List<PlatformProduct> platProdList = platProductRepository.findByPlatformIdAndStatus(platformId, 1);
 
-        // 取得所有上架状态商品
-        List<PlatformProduct> platProdList = platProductRepository.findByPlatformIdAndStatus(platformId, 1);
+            // 三江商品编码与平台商品编码的映射
+            Map<String, String> tempMap = new HashMap<>();
+            platProdList.stream()
+                    .filter(product -> product.getStatus() != ProductStatusEnum.DELETED.status())
+                    .forEach(product -> {
+                        if (isForSj) {
+                            tempMap.put(product.getSjGoodsCode(), product.getPlatformGoodsCode());
+                        } else {
+                            tempMap.put(product.getPlatformGoodsCode(), product.getSjGoodsCode());
+                        }
+                    });
 
-        // 三江商品编码与平台商品编码的映射
-        Map<String, String> tempMap = new HashMap<>();
-        platProdList.stream()
-                .filter(product -> product.getStatus() != ProductStatusEnum.DELETED.status())
-                .forEach(product -> {
-                    if (isForSj) {
-                        tempMap.put(product.getSjGoodsCode(), product.getPlatformGoodsCode());
-                    } else {
-                        tempMap.put(product.getPlatformGoodsCode(), product.getSjGoodsCode());
-                    }
-                });
-        return tempMap;
+            valueOperations.set(redisKey, tempMap);
+
+            return tempMap;
+        }
+
+//        // 取得所有上架状态商品
+//        List<PlatformProduct> platProdList = platProductRepository.findByPlatformIdAndStatus(platformId, 1);
+//
+//        // 三江商品编码与平台商品编码的映射
+//        Map<String, String> tempMap = new HashMap<>();
+//        platProdList.stream()
+//                .filter(product -> product.getStatus() != ProductStatusEnum.DELETED.status())
+//                .forEach(product -> {
+//                    if (isForSj) {
+//                        tempMap.put(product.getSjGoodsCode(), product.getPlatformGoodsCode());
+//                    } else {
+//                        tempMap.put(product.getPlatformGoodsCode(), product.getSjGoodsCode());
+//                    }
+//                });
+//        return tempMap;
     }
 
 
@@ -225,14 +234,43 @@ public class BaseStockBusiness {
     }
 
 
+    public XtStore getOneXtStockList(String shopCode, String goodCode) {
+        try {
+            return stockJdbcTemplate.queryForObject(SHOP_PRODUCT_STOCK_SQL, new Object[]{shopCode, goodCode}, getRowMapper());
+        } catch (EmptyResultDataAccessException ex) {
+            //size=null||size=0
+            log.error("中间库未找到商场" + shopCode + ",商品" + goodCode);
+            return null;
+        } catch (IncorrectResultSizeDataAccessException ex) {
+            //size>1
+            log.error("中间库中存在多条相同数据商场" + shopCode + ",商品" + goodCode);
+            return null;
+        }
+    }
+
+
     /**
      * 取得给定门店列表下的所有商品库存同步数据列表
      *
      * @param shopCode 门店编码列表
      * @return 库存同步数据列表
      */
-    protected List<XtStore> getXtStockList(String shopCode) {
+    public List<XtStore> getXtStockList(String shopCode) {
         return stockJdbcTemplate.query(SHO_PRODUCT_STOCK_SQL, new Object[]{shopCode}, getRowMapper());
+//        return stockJdbcTemplate.query(SHO_PRODUCT_STOCK_SQL, new Object[]{shopCode}, new RowMapper<XtStore>(){
+//            public XtStore mapRow(ResultSet resultSet, int i) throws SQLException {
+//                int status = resultSet.getInt("GOODSSTATUS");
+//                if (status != 1 && status != 2 && status != 3 && status != 4 && status != 7) {
+//                    return null;
+//                }
+//                XtStore xtStore = new XtStore();
+//                xtStore.setSjShopCode(resultSet.getString("SCBH"));
+//                xtStore.setSjGoodsCode(resultSet.getString("GLBH"));
+//                xtStore.setStockNumber(resultSet.getInt("KCSL"));
+//                return xtStore;
+//            }
+//
+//        });
     }
 
 
@@ -249,6 +287,7 @@ public class BaseStockBusiness {
             xtStore.setSjShopCode(resultSet.getString("SCBH"));
             xtStore.setSjGoodsCode(resultSet.getString("GLBH"));
             xtStore.setStockNumber(resultSet.getInt("KCSL"));
+            xtStore.setStatus(status);
             return xtStore;
         };
     }
@@ -346,7 +385,7 @@ public class BaseStockBusiness {
 
     public RowMapper<JDBatchPriceSync> getPriceSyncRowMapper() {
         return (resultSet, i) -> {
-            JDBatchPriceSync obj=new JDBatchPriceSync();
+            JDBatchPriceSync obj = new JDBatchPriceSync();
             obj.setStoreid(resultSet.getString("store_id"));
             obj.setGoodsid(new BigDecimal(resultSet.getString("goods_id")));
             obj.setBatchsaleprice(resultSet.getBigDecimal("BATCH_SALE_PRICE"));
@@ -459,6 +498,22 @@ public class BaseStockBusiness {
             }
         });
 
+    }
+
+
+    private static final String UPDATE_STOCK_CHANGE_SQL = "update GOODS_STOCK_SYNC set STORE_STOCK=?, CURRENT_STOCK=?, GOODS_STATUS=?, SYNC_TIME=sysdate " +
+            "      where STORE_ID=? and GOODS_ID=? ";
+
+    public int UpdateGoodsStockSync(String storeId, String goodsId, int stockNum, int validStock, int status) {
+        return jingDongDaoJiaJdbcTemplate.update(UPDATE_STOCK_CHANGE_SQL, new PreparedStatementSetter() {
+            public void setValues(PreparedStatement ps) throws SQLException {
+                ps.setInt(1, stockNum);
+                ps.setInt(2, validStock);
+                ps.setInt(3, status);
+                ps.setString(4, storeId);
+                ps.setString(5, goodsId);
+            }
+        });
     }
 
 }
