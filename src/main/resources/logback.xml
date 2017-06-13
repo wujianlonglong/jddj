@@ -4,7 +4,7 @@
     <contextName>sj-hub</contextName>
 
     <property name="projectName" value="jddj"/>
-    <property name="logging.path" value="/${HOME}/sj-hub/logs/${projectName}/${projectName}.log" />
+    <property name="logging.path" value="/${HOME}/jingdong/logs/${projectName}/${projectName}.log" />
 
     <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
         <!-- <filter class="com.example.logback.filter.MyFilter" /> -->
