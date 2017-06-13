@@ -129,44 +129,30 @@ public class BaseStockBusiness {
     public Map<String, String> getPlatProdMap(String platformId, boolean isForSj) {
         String redisKey = isForSj ? RedisConstant.PLAT_PROD_MAP_SJ + platformId : RedisConstant.PLAT_PROD_MAP_PLAT + platformId;
         Map<String, String> platProdMap = valueOperations.get(redisKey);
-        if (MapUtils.isNotEmpty(platProdMap)) {
-            return platProdMap;
-        } else {
-            // 取得所有上架状态商品
-            List<PlatformProduct> platProdList = platProductRepository.findByPlatformIdAndStatus(platformId, 1);
+        if (MapUtils.isEmpty(platProdMap)) {
+            synchronized (BaseStockBusiness.class) {
+                platProdMap = valueOperations.get(redisKey);
+                if (MapUtils.isEmpty(platProdMap)) {
+                    // 取得所有上架状态商品
+                    List<PlatformProduct> platProdList = platProductRepository.findByPlatformIdAndStatus(platformId, 1);
+                    // 三江商品编码与平台商品编码的映射
+                    Map<String, String> tempMap = new HashMap<>();
+                    platProdList.stream()
+                            .filter(product -> product.getStatus() != ProductStatusEnum.DELETED.status())
+                            .forEach(product -> {
+                                if (isForSj) {
+                                    tempMap.put(product.getSjGoodsCode(), product.getPlatformGoodsCode());
+                                } else {
+                                    tempMap.put(product.getPlatformGoodsCode(), product.getSjGoodsCode());
+                                }
+                            });
 
-            // 三江商品编码与平台商品编码的映射
-            Map<String, String> tempMap = new HashMap<>();
-            platProdList.stream()
-                    .filter(product -> product.getStatus() != ProductStatusEnum.DELETED.status())
-                    .forEach(product -> {
-                        if (isForSj) {
-                            tempMap.put(product.getSjGoodsCode(), product.getPlatformGoodsCode());
-                        } else {
-                            tempMap.put(product.getPlatformGoodsCode(), product.getSjGoodsCode());
-                        }
-                    });
-
-            valueOperations.set(redisKey, tempMap);
-
-            return tempMap;
+                    valueOperations.set(redisKey, tempMap);
+                    platProdMap=valueOperations.get(redisKey);
+                }
+            }
         }
-
-//        // 取得所有上架状态商品
-//        List<PlatformProduct> platProdList = platProductRepository.findByPlatformIdAndStatus(platformId, 1);
-//
-//        // 三江商品编码与平台商品编码的映射
-//        Map<String, String> tempMap = new HashMap<>();
-//        platProdList.stream()
-//                .filter(product -> product.getStatus() != ProductStatusEnum.DELETED.status())
-//                .forEach(product -> {
-//                    if (isForSj) {
-//                        tempMap.put(product.getSjGoodsCode(), product.getPlatformGoodsCode());
-//                    } else {
-//                        tempMap.put(product.getPlatformGoodsCode(), product.getSjGoodsCode());
-//                    }
-//                });
-//        return tempMap;
+        return platProdMap;
     }
 
 
