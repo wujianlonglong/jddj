@@ -115,6 +115,7 @@ public class StockService {
                     int excute = baseStockBusiness.UpdateGoodsStockSync(storeId, goodsId, stockNum, validStock, status);
                     if (excute > 0) {
                         result.setSuccess(true);
+                        result.setCode("0");
                         result.setMsg("调用京东到家更新库存接口成功！京东到家现货库存为：" + validStock);
                     } else {
                         log.error("更新京东到家现货库存为：" + validStock + "成功，更新本地数据库失败(可能本地没有该条数据):商场" + storeId + "商品" + goodsId+"库存"+stockNum+"现货库存"+validStock+"状态"+status);
