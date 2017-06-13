@@ -127,6 +127,7 @@ public class BaseStockBusiness {
      * @return 平台与三江门店的编码映射
      */
     public Map<String, String> getPlatProdMap(String platformId, boolean isForSj) {
+        //ceshi
         String redisKey = isForSj ? RedisConstant.PLAT_PROD_MAP_SJ + platformId : RedisConstant.PLAT_PROD_MAP_PLAT + platformId;
         Map<String, String> platProdMap = valueOperations.get(redisKey);
         if (MapUtils.isEmpty(platProdMap)) {
