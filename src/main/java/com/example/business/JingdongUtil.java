@@ -75,7 +75,8 @@ public class JingdongUtil {
 
             String requestTime = dateFormat.format(new Date());
             long apiMillis = System.currentTimeMillis();
-            log.info("准备调用京东端批量更新库存接口：" + jddjProperty.getApiUrl() + "/stock/batchUpdate" + ",数据数量：" + tmpjDGoodsStockItemObjList.size() + ",请求次数：" + num + ",请求数据：" + postData + ",请求时间：" + requestTime);
+            //log.info("准备调用京东端批量更新库存接口：" + jddjProperty.getApiUrl() + "/stock/batchUpdate" + ",数据数量：" + tmpjDGoodsStockItemObjList.size() + ",请求次数：" + num + ",请求数据：" + postData + ",请求时间：" + requestTime);
+            log.info("准备调用京东端批量更新库存接口：" + jddjProperty.getApiUrl() + "/stock/batchUpdate" + ",数据数量：" + tmpjDGoodsStockItemObjList.size() + ",请求次数：" + num +  ",请求时间：" + requestTime);
 
             String Response = restTemplate.postForObject(jddjProperty.getApiUrl() + "/stock/batchUpdate", entity, String.class);
             Response = common.getClearJsonString(Response);
@@ -126,7 +127,8 @@ public class JingdongUtil {
 
             String requestTime = dateFormat.format(new Date());
             long apiMillis = System.currentTimeMillis();
-            log.info("准备调用京东端批量更新价格接口：" + jddjProperty.getApiUrl() + "/price/batchUpdate" + ",数据数量：" + tmpjDGoodsPriceItemObjList.size() + ",请求次数：" + num + ",请求数据：" + postData + ",请求时间：" + requestTime);
+           // log.info("准备调用京东端批量更新价格接口：" + jddjProperty.getApiUrl() + "/price/batchUpdate" + ",数据数量：" + tmpjDGoodsPriceItemObjList.size() + ",请求次数：" + num + ",请求数据：" + postData + ",请求时间：" + requestTime);
+            log.info("准备调用京东端批量更新价格接口：" + jddjProperty.getApiUrl() + "/price/batchUpdate" + ",数据数量：" + tmpjDGoodsPriceItemObjList.size() + ",请求次数：" + num + ",请求时间：" + requestTime);
 
             String Response = restTemplate.postForObject(jddjProperty.getApiUrl() + "/price/batchUpdate", entity, String.class);
             Response = common.getClearJsonString(Response);

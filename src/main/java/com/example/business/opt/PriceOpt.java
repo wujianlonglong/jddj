@@ -112,7 +112,7 @@ public class PriceOpt extends BaseStockBusiness {
                         try{
                             String platGoodsCode = platProdMap.get(sjGoodsCode);//京东商品编号
                             if (StringUtils.isEmpty(platGoodsCode)) {
-                                log.error("商品：" + sjGoodsCode + ",在商品映射表中不存在！");
+                               // log.error("商品：" + sjGoodsCode + ",在商品映射表中不存在！");
                                 return;
                             }
 
@@ -243,7 +243,7 @@ public class PriceOpt extends BaseStockBusiness {
                     try {
                         String platGoodsCode = platProdMap.get(sjGoodsCode);//京东商品编号
                         if (StringUtils.isEmpty(platGoodsCode)) {
-                            log.error("商品：" + sjGoodsCode + ",在商品映射表中不存在！");
+                          //  log.error("商品：" + sjGoodsCode + ",在商品映射表中不存在！");
                             return;
                         }
                         BigDecimal price=new BigDecimal(goodsPrice.getSalePrice()).divide(new BigDecimal(100));

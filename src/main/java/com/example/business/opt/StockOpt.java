@@ -168,7 +168,7 @@ public class StockOpt extends BaseStockBusiness {
                         }
                         String platGoodCode = platProdMap.get(goodCode);//京东到家商品编号
                         if (StringUtils.isEmpty(platGoodCode)) {
-                            log.error("商品：" + goodCode + "在商品映射表中不存在京东到家的映射，跳过该商品虚拟库存同步！");
+                         //   log.error("商品：" + goodCode + "在商品映射表中不存在京东到家的映射，跳过该商品虚拟库存同步！");
                             return;
                         }
 
@@ -277,7 +277,7 @@ public class StockOpt extends BaseStockBusiness {
                         try {
                             String platGoodsCode = platProdMap.get(sjGoodsCode);//京东商品编号
                             if (StringUtils.isEmpty(platGoodsCode)) {
-                                log.error("商品：" + sjGoodsCode + ",在商品映射表中不存在！");
+                              //  log.error("商品：" + sjGoodsCode + ",在商品映射表中不存在！");
                                 return;
                             }
                             StockSync stockSync = stockSyncMap.get(sjGoodsCode);//获取中台的库存同步表商品信息
@@ -413,7 +413,7 @@ public class StockOpt extends BaseStockBusiness {
                     try {
                         String platGoodsCode = platProdMap.get(sjGoodsCode);//京东商品编号
                         if (StringUtils.isEmpty(platGoodsCode)) {
-                            log.error("商品：" + sjGoodsCode + ",在商品映射表中不存在！");
+                           // log.error("商品：" + sjGoodsCode + ",在商品映射表中不存在！");
                             return;
                         }
                         StockSync stockSync = stockSyncMap.get(sjGoodsCode);//获取中台的库存同步表商品信息
@@ -467,7 +467,7 @@ public class StockOpt extends BaseStockBusiness {
         try {
             String platGoodsCode = platProdMap.get(sjGoodsCode);//京东商品编号
             if (StringUtils.isEmpty(platGoodsCode)) {
-                log.error("商品：" + sjGoodsCode + ",在商品映射表中不存在！");
+               // log.error("商品：" + sjGoodsCode + ",在商品映射表中不存在！");
                 return;
             }
             StockSync stockSync = stockSyncMap.get(sjGoodsCode);//获取中台的库存同步表商品信息
@@ -579,7 +579,7 @@ public class StockOpt extends BaseStockBusiness {
                     String sjGood = lock.getSjGoodsCode();
                     String jdGood = platProdMap.get(sjGood);
                     if (null == jdGood) {
-                        log.error("商品：" + sjGood + "不是京东到家商品！");
+                    //    log.error("商品：" + sjGood + "不是京东到家商品！");
                         return;
                     }
                     Integer stockNum = 0;
