@@ -1,7 +1,9 @@
 package com.example.business.CommonJingdong;
 
 import com.example.business.model.*;
+import com.example.domain.jddj.ApiToken;
 import com.example.domain.sjhub.PlatformShop;
+import com.example.repository.jddj.ApiTokenRepository;
 import com.example.repository.sjhub.PlatformShopRepository;
 import com.example.utils.JsonUtil;
 import com.example.utils.property.JddjProperty;
@@ -69,6 +71,8 @@ public class Common {
     @Autowired
     private RedisProperty redisProperty;
 
+    @Autowired
+    private ApiTokenRepository apiTokenRepository;
 
     @Autowired
     private JdbcTemplate dwhJdbcTemplate;
@@ -213,12 +217,14 @@ public class Common {
     public String GetRequestData(String jd_param_json, String v) throws UnsupportedEncodingException {
         String now = dateFormatnew.format(new Date());
         JDSysRequestParam obj = new JDSysRequestParam();
-        obj.setSign(GetRequestSign(jd_param_json, now, v));
+        String token=getNewToken();
+        obj.setSign(GetRequestSign(jd_param_json, now, v,token));
         String getData = "v=" + v
                 + "&format=" + obj.getFormat()
                 + "&app_key=" + obj.getApp_key()
                 + "&app_secret=" + obj.getApp_secret()
-                + "&token=" + obj.getToken()
+                //+ "&token=" + obj.getToken()
+                + "&token=" + token
                 //  + "&jd_param_json=" + jd_param_json
                 + "&jd_param_json=" + java.net.URLEncoder.encode(jd_param_json, "UTF-8")
                 + "&sign=" + obj.getSign()
@@ -228,14 +234,15 @@ public class Common {
     }
 
 
-    public String GetRequestSign(String jd_param_json, String now, String v) {
+    public String GetRequestSign(String jd_param_json, String now, String v,String token) {
         JDSysRequestParam obj = new JDSysRequestParam();
         String str = obj.getApp_secret()
                 + "app_key" + obj.getApp_key()
                 + "format" + obj.getFormat()
                 + "jd_param_json" + jd_param_json
                 + "timestamp" + now
-                + "token" + obj.getToken()
+               // + "token" + obj.getToken()
+                + "token" + token
                 + "v" + v
                 + obj.getApp_secret();
         String sign = BytesConvertToHexString(EncryptionStrBytes(str, "MD5")).toUpperCase();
@@ -383,7 +390,7 @@ public class Common {
 //                result = eRPPromotionListObj.getPromotionId();
 //            }
 //        } else {
-           // List<ERPPromotionObj> eRPPromotionObjDbList = GetAllPromtion();
+        // List<ERPPromotionObj> eRPPromotionObjDbList = GetAllPromtion();
 //            valueOperations.set(redisKey, eRPPromotionObjDbList);
 //            eRPPromotionListObj = eRPPromotionObjDbList.stream().filter(p -> p.getJDDJPromotionId().equals(jddjPromotionId)).findFirst().orElse(null);
 //            if (null != eRPPromotionListObj) {
@@ -392,9 +399,9 @@ public class Common {
 //        }
         ERPPromotionObj eRPPromotionListObj;
         List<ERPPromotionObj> eRPPromotionObjDbList = GetAllPromtion();
-        if(CollectionUtils.isNotEmpty(eRPPromotionObjDbList)) {
+        if (CollectionUtils.isNotEmpty(eRPPromotionObjDbList)) {
             eRPPromotionListObj = eRPPromotionObjDbList.stream().filter(p -> p.getJDDJPromotionId().equals(jddjPromotionId)).findFirst().orElse(null);
-            if(null!=eRPPromotionListObj){
+            if (null != eRPPromotionListObj) {
                 result = eRPPromotionListObj.getPromotionId();
             }
         }
@@ -941,6 +948,12 @@ public class Common {
             }
         }
 
+    }
+
+
+    public String getNewToken() {
+        ApiToken token = apiTokenRepository.getNewToken();
+        return token.getToken();
     }
 
 
