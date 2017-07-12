@@ -37,7 +37,7 @@ public class ProductOpt {
     @Autowired
     protected PlatformProductRepository platProductRepository;
 
-    @Scheduled(cron = "0 0 7,11,15,19 * * *")
+   // @Scheduled(cron = "0 0 7,11,15,19 * * *")
     public void productSync() {
         log.info("开始全量同步京东到家商品至中台商品！");
         int productCount = jingdongUtil.getJdProductCount();
