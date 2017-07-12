@@ -326,7 +326,8 @@ public class PriceOpt extends BaseStockBusiness {
                         JdBatchnoQueryResponse jdBatchnoQueryResponse = JsonUtil.jsonToObject(batchResult, JdBatchnoQueryResponse.class);
                         //把批量更新价格错误的流水添加至redis
                         if (jdBatchnoQueryResponse.getSuccess() == false || !jdBatchnoQueryResponse.getData().getCode().equals("0")) {
-                            virStockBatchOperations.set(RedisConstant.ERROE_STOCK_BATCH_NO + batchNo, batchResult, 1, TimeUnit.DAYS);//redis保存1天
+                            log.error("错误流水信息："+jdBatchnoQueryResponse.getData().getMsg());
+                           // virStockBatchOperations.set(RedisConstant.ERROE_STOCK_BATCH_NO + batchNo, batchResult, 1, TimeUnit.DAYS);//redis保存1天
                         }
 
                         Date nowTime = new Date();

@@ -65,7 +65,6 @@ public class PriceController {
         return result;
     }
 
-
     /**
      * 导入商品价格
      * @param priceSyncList

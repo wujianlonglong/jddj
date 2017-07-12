@@ -130,7 +130,7 @@ public class StockOpt extends BaseStockBusiness {
                 String platShopCode = platShopMap.get(shopCode);//京东到家门店编号
                 //如果中台没有该门店则跳过该门店虚拟库存同步
                 if (StringUtils.isEmpty(platShopCode)) {
-                    log.error("门店：" + shopCode + "不属于京东到家有效的门店，跳过该门店虚拟库存同步！");
+                   // log.error("门店：" + shopCode + "不属于京东到家有效的门店，跳过该门店虚拟库存同步！");
                     return;
                 }
                 List<StockVirtualSync> stockVirtualSyncs = stockVirtualSyncListGroupByShip.get(shopCode);
@@ -237,6 +237,7 @@ public class StockOpt extends BaseStockBusiness {
 
             //根据门店来循环同步库存
             platformShopList.forEach(obj -> {
+              //  if(!obj.getSjShopCode().equals("00095")){return;}
                 String sjShop = obj.getSjShopCode();
                 log.info("门店：" + sjShop + "全量同步库存开始！");
                 try {
@@ -272,6 +273,7 @@ public class StockOpt extends BaseStockBusiness {
                     String platShopCode = obj.getPlatformShopCode();//京东到家门店编号
                     //以中间库为核心，循环同步库存
                     storeList.forEach(store -> {
+                    //    if(!store.getSjGoodsCode().equals("1013420")){return;}
                         // InsertGoodList(platProdMap, goodsItemList, updateList, sjShop, stockSyncMap, platShopCode, store);
                         String sjGoodsCode = store.getSjGoodsCode();//三江商品编号
                         try {
@@ -507,8 +509,8 @@ public class StockOpt extends BaseStockBusiness {
     @Scheduled(cron = "0 0,30 * * * *")
     public void releaseLockStockNum() {
         LocalDateTime now = LocalDateTime.now();
-        // String initTime = String.format("%02d", now.getHour()) + ":" + String.format("%02d", now.getMinute());
-        String initTime = "19:30";
+        String initTime = String.format("%02d", now.getHour()) + ":" + String.format("%02d", now.getMinute());
+      //  String initTime = "19:30";
         try {
             // 取得当前时间的释放锁定库存计划
             List<StockVirtualPlan> planList = planRepository.findByVirLockSyncTimeAndVirLockStatus(initTime, Constant.SYNC_FLAG_ENABLE);
@@ -542,7 +544,7 @@ public class StockOpt extends BaseStockBusiness {
             plaMap.forEach((shop, lockList) -> {
                 String jdShop = shopMap.get(shop);
                 if (null == jdShop) {
-                    log.error("门店" + shop + "不是京东到家有效门店！");
+                   // log.error("门店" + shop + "不是京东到家有效门店！");
                     return;
                 }
                 Map<String, Integer> virGoodMap = new HashMap<>();
@@ -669,7 +671,8 @@ public class StockOpt extends BaseStockBusiness {
                         JdBatchnoQueryResponse jdBatchnoQueryResponse = JsonUtil.jsonToObject(batchResult, JdBatchnoQueryResponse.class);
                         //把批量更新库存错误的流水添加至redis
                         if (jdBatchnoQueryResponse.getSuccess() == false || !jdBatchnoQueryResponse.getData().getCode().equals("0")) {
-                            virStockBatchOperations.set(RedisConstant.ERROE_STOCK_BATCH_NO + batchNo, batchResult, 1, TimeUnit.DAYS);//redis保存1天
+                            log.error("错误流水信息："+jdBatchnoQueryResponse.getData().getMsg());
+                            //virStockBatchOperations.set(RedisConstant.ERROE_STOCK_BATCH_NO + batchNo, batchResult, 1, TimeUnit.DAYS);//redis保存1天
                         }
 
                         Date nowTime = new Date();

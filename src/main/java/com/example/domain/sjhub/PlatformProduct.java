@@ -1,6 +1,7 @@
 package com.example.domain.sjhub;
 
 import lombok.Data;
+import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @Entity(name = "PLATFORM_PRODUCT")
+@DynamicUpdate(true)
 public class PlatformProduct {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pordGenerator")
